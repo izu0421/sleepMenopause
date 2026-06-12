@@ -1,0 +1,667 @@
+---
+title: "Analysis of the connection between sleep and menopause"
+output:
+  html_document:
+    df_print: paged
+---
+
+<!-- ============================================================================
+  02 - Perimenopausal cohort: preprocessing and ordinal regression
+  Project: sleepMenopause - androgen decline and perimenopausal sleep
+============================================================================ -->
+
+## Overview
+
+Part of the **sleepMenopause** project (androgen decline and perimenopausal
+sleep-onset disruption).
+
+This notebook cleans the perimenopausal sleep-survey responses (consent and
+completion filtering, sex/gender consistency checks), derives the analysis
+dataset, and models associations between hormonal use, clinical triggers and
+individual sleep outcomes using ordinal logistic regression (`MASS::polr`) and
+Spearman correlations. Corresponds to manuscript **Figures 2-4**.
+
+- **Inputs:** `dt/Sleep Survey_*.csv` (raw survey exports — *not included*; see
+  *Data availability* in `README.md`).
+- **Outputs:** cleaned analysis tables (`dt_out/`) and regression / correlation
+  results.
+- **Dependencies:** dplyr, tidyr, caret, ggplot2, stringr, ggbiplot, MASS, broom.
+
+> Raw participant data are not distributed with this repository.
+
+---
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(caret)
+library(ggplot2)
+library(stringr)
+library(ggbiplot)
+library(MASS)
+library(broom)
+```
+
+## Preprocessing 
+
+```{r}
+dt = read.csv("dt/Sleep Survey_June 20, 2024_09.13.csv", fileEncoding="latin1")
+columns = dt[1,]
+dt = dt[-1,]
+colnames(dt) <- columns
+```
+Ensure consent
+<br>
+Columns linked to consent: c(18:23)]
+```{r}
+dt_consent = dt
+for (consent_col in c(18:23)){
+  dt_consent = dt_consent[dt_consent[,consent_col] == "I confirm",]
+}
+  
+```
+
+Ensure completed questionnaire 
+```{r}
+dt_complete = dt_consent[dt_consent$Progress ==100,]
+```
+
+Check sex/gender change 
+```{r}
+print(sum(dt_complete$`What sex were you assigned at birth?` == dt_complete$`How do you describe yourself?`))
+print(nrow(dt_complete))
+```
+
+```{r}
+dt_gender = dt_complete[dt_complete$`What sex were you assigned at birth?` == dt_complete$`How do you describe yourself?`,]
+```
+
+```{r}
+write.csv(dt_gender,"dt_out/dt_cleaned_v1.csv")
+```
+
+```{r}
+dt_clean = dt_gender[,-c(1:25)]
+write.csv(dt_clean,"dt_out/dt_cleaned_v2.csv")
+```
+
+Feature derivation
+```{r}
+data = dt_clean
+
+data <- data %>%
+  mutate(across(where(is.character), as.factor))  # Convert character columns to factors
+
+
+```
+
+## Recode all variables
+```{r}
+sleep_time_mapping <- setNames(c(1, 2, 3, 4, 5),
+                               c("Less than 5 minutes", "5-15 minutes", "15-30 minutes", "30-60 minutes", "More than 60 minutes"))
+
+# Convert to numerical ranks using the mapping
+data$sleep_time_to_fall_asleep_numeric <- as.numeric(sapply(data$`How long does it take you to fall asleep?`, function(x) sleep_time_mapping[x]))
+
+
+data$age_numeric <- case_when(
+  data$`How old are you? Please select one option` == "18-29" ~ 23.5,
+  data$`How old are you? Please select one option` == "30-39" ~ 34.5,
+  data$`How old are you? Please select one option` == "40-49" ~ 44.5,
+  data$`How old are you? Please select one option` == "50-59" ~ 54.5,
+  data$`How old are you? Please select one option` == "60-69" ~ 64.5,
+  data$`How old are you? Please select one option` == "70+" ~ 75,  # Assuming 75 as midpoint for 70+
+  TRUE ~ NA_real_  # Handles other or missing categories
+)
+data$white_british = data$`How would you describe your ethnic origin? Please select one option - Selected Choice` == "White English / Welsh / Scottish / Northern Irish / British"
+```
+
+
+```{r}
+data$income_numeric <- case_when(
+  data$`What is your annual income? (We ask this question to better understand how socioeconomic factors may influence sleep patterns during menopause, to inform recommendations and therapies for improved well-being. Please only answer if you are happy to do so):` == "<£10,000" ~ 8000,   # Assuming midpoint for less than £10,000 is £8,000
+  data$`What is your annual income? (We ask this question to better understand how socioeconomic factors may influence sleep patterns during menopause, to inform recommendations and therapies for improved well-being. Please only answer if you are happy to do so):` == "£10,000 - £20,000" ~ 15000,  # Midpoint of £10,000 and £20,000
+  data$`What is your annual income? (We ask this question to better understand how socioeconomic factors may influence sleep patterns during menopause, to inform recommendations and therapies for improved well-being. Please only answer if you are happy to do so):` == "£20,000 - £30,000" ~ 25000,  # Midpoint of £20,000 and £30,000
+  data$`What is your annual income? (We ask this question to better understand how socioeconomic factors may influence sleep patterns during menopause, to inform recommendations and therapies for improved well-being. Please only answer if you are happy to do so):` == "£30,000 - £40,000" ~ 35000,  # Midpoint of £30,000 and £40,000
+  data$`What is your annual income? (We ask this question to better understand how socioeconomic factors may influence sleep patterns during menopause, to inform recommendations and therapies for improved well-being. Please only answer if you are happy to do so):` == "£40,000 - £60,000" ~ 50000,  # Midpoint of £40,000 and £60,000
+  data$`What is your annual income? (We ask this question to better understand how socioeconomic factors may influence sleep patterns during menopause, to inform recommendations and therapies for improved well-being. Please only answer if you are happy to do so):` == "£60,000 - £80,000" ~ 70000,  # Midpoint of £60,000 and £80,000
+  data$`What is your annual income? (We ask this question to better understand how socioeconomic factors may influence sleep patterns during menopause, to inform recommendations and therapies for improved well-being. Please only answer if you are happy to do so):` == ">£60,000" ~ 80000,   # Assuming a reasonable midpoint for incomes above £60,000
+  data$`What is your annual income? (We ask this question to better understand how socioeconomic factors may influence sleep patterns during menopause, to inform recommendations and therapies for improved well-being. Please only answer if you are happy to do so):` == "Prefer not to say" ~ NA_real_,  # Handle 'Prefer not to say' as NA
+  TRUE ~ NA_real_  # Handles other or missing categories
+)
+```
+
+```{r}
+data$sleep_quality <- case_when(
+  data$`How would you rate your sleep quality?` == "Very poor" ~ 1,
+  data$`How would you rate your sleep quality?` == "Poor" ~ 2,
+  data$`How would you rate your sleep quality?` == "Average" ~ 3,
+  data$`How would you rate your sleep quality?` == "Good" ~ 4,
+  data$`How would you rate your sleep quality?` == "Very good" ~ 5,
+  TRUE ~ NA_real_  # Handles missing categories or unexpected values
+)
+```
+
+```{r}
+data$time_to_fall_asleep_numeric <- case_when(
+  data$`How long does it take you to fall asleep?` == "<15 mins " ~ 1,
+  data$`How long does it take you to fall asleep?` == "15-30 mins " ~ 2,
+  data$`How long does it take you to fall asleep?` == "30-45 mins " ~ 3,
+  data$`How long does it take you to fall asleep?` == "45-60mins " ~ 4,
+  data$`How long does it take you to fall asleep?` == ">1 hour" ~ 5,
+  TRUE ~ NA_real_  # Handles missing categories or unexpected values
+)
+```
+
+
+```{r}
+data$awake_minutes_numeric <- case_when(
+  data$`If you wake in the night, how long in total are you awake?` == "<15 mins" ~ 7.5,
+  data$`If you wake in the night, how long in total are you awake?` == "<30 mins" ~ 22.5,
+  data$`If you wake in the night, how long in total are you awake?` == "30-60 mins" ~ 45,
+  data$`If you wake in the night, how long in total are you awake?` == "1-2 hours" ~ 90,
+  data$`If you wake in the night, how long in total are you awake?` == "2-3 hours" ~ 150,
+  data$`If you wake in the night, how long in total are you awake?` == ">3 hours" ~ 180,  # Could be more, but 180 is a reasonable estimate for over 3 hours
+  data$`If you wake in the night, how long in total are you awake?` == "I don't wake in the night" ~ 0,
+  TRUE ~ NA_real_  # Handles missing categories or unexpected values
+)
+
+```
+
+```{r}
+choices <- c("No reason you can think of, you just wake up",
+             "Physical symptoms, e.g, pain, hot flushes, sweats, racing heart, needing to use the bathroom",
+             "Having worries or problems playing on your mind",
+             "The person I share a bed with, e.g. due to their snoring or movement etc.")
+
+# Generate binary variables for each choice
+for(choice in choices) {
+  data[[str_replace_all(choice, "[^A-Za-z0-9]", "_")]] <- as.integer(str_detect(data$`What wakes you during the night? (Tick all that apply) - Selected Choice`, fixed(choice)))
+}
+
+```
+
+```{r}
+data$early_waking_numeric <- case_when(
+  data$`Do you have a problem with waking too early and not getting back to sleep?` == "Not at all  " ~ 0,
+  data$`Do you have a problem with waking too early and not getting back to sleep?` == "Sometimes  " ~ 1,
+  data$`Do you have a problem with waking too early and not getting back to sleep?` == "Frequently  " ~ 2,
+  TRUE ~ NA_real_  # Handles missing categories or unexpected values
+)
+```
+
+```{r}
+data$functional_impairment_numeric <- case_when(
+  data$`To what extent does your sleep in interfere with daily functioning, e.g., day-time tiredness, mood, memory, work, concentration` == "Not at all " ~ 0,
+  data$`To what extent does your sleep in interfere with daily functioning, e.g., day-time tiredness, mood, memory, work, concentration` == "A little " ~ 1,
+  data$`To what extent does your sleep in interfere with daily functioning, e.g., day-time tiredness, mood, memory, work, concentration` == "Somewhat " ~ 2,
+  data$`To what extent does your sleep in interfere with daily functioning, e.g., day-time tiredness, mood, memory, work, concentration` == "Interferes a lot " ~ 3,
+  TRUE ~ NA_real_  # Handles missing categories or unexpected values
+)
+
+# Check the converted data
+head(data[, c("To what extent does your sleep in interfere with daily functioning, e.g., day-time tiredness, mood, memory, work, concentration", "functional_impairment_numeric")])
+
+```
+
+
+```{r}
+data$daytime_sleepiness_numeric <- case_when(
+  data$`Do you "nod off", doze or fall asleep during the day without obvious reason?` == "Never" ~ 0,
+  data$`Do you "nod off", doze or fall asleep during the day without obvious reason?` == "Sometimes" ~ 1,
+  data$`Do you "nod off", doze or fall asleep during the day without obvious reason?` == "Regularly" ~ 2,
+  data$`Do you "nod off", doze or fall asleep during the day without obvious reason?` == "Always" ~ 3,
+  TRUE ~ NA_real_  # Handles missing categories or unexpected values
+)
+
+# Check the converted data
+head(data[, c("Do you \"nod off\", doze or fall asleep during the day without obvious reason?", "daytime_sleepiness_numeric")])
+
+```
+
+```{r}
+data$exercise_frequency_numeric <- case_when(
+  data$`How often do you exercise or engage in physical activity that raises the heart rate for at least 30 minutes:` == "None at all" ~ 0,
+  data$`How often do you exercise or engage in physical activity that raises the heart rate for at least 30 minutes:` == "Once a week" ~ 1,
+  data$`How often do you exercise or engage in physical activity that raises the heart rate for at least 30 minutes:` == "2-3 times per week" ~ 2,
+  data$`How often do you exercise or engage in physical activity that raises the heart rate for at least 30 minutes:` == "4-5 times per week" ~ 3,
+  data$`How often do you exercise or engage in physical activity that raises the heart rate for at least 30 minutes:` == "Most days" ~ 4,
+  TRUE ~ NA_real_  # Handles missing categories or unexpected values
+)
+
+# Check the converted data
+head(data[, c("How often do you exercise or engage in physical activity that raises the heart rate for at least 30 minutes:", "exercise_frequency_numeric")])
+
+```
+
+```{r}
+data$take_HRT = data$`Do you take HRT? (Tick all that apply) - Selected Choice` != "I do not take HRT"
+```
+
+```{r}
+data$take_testosterone = data$`Do you take testosterone?` =="Yes "
+
+```
+
+```{r}
+choices <- c(
+  "Combined HRT (oestrogen and progesterone) in tablet form, e.g., Kliovance, Elleste Duet, Bijuve, Femoston",
+  "Combined HRT (oestrogen and progesterone) patch e.g., Evorel Sequi, Evorel Conti",
+  "Oestrogen only gel or patch",
+  "Vaginal progesterone e.g. Utrogestan, Cyclogest, Lutigest",
+  "Other",
+  "I do not take HRT",
+  "I used to take HRT but do not anymore",
+  "Utrogestan or Gepretix (taken orally)"
+)
+
+# Generate binary variables for each choice
+for(choice in choices) {
+  data[[str_replace_all(choice, "[^A-Za-z0-9]", "_")]] <- as.integer(str_detect(data$`Do you take HRT? (Tick all that apply) - Selected Choice`, fixed(choice)))
+}
+
+# Check the new columns
+head(data[, c("Do you take HRT? (Tick all that apply) - Selected Choice", grep("HRT", names(data), value = TRUE))])
+
+```
+
+```{r}
+data$bmi = as.numeric(as.character(data$`Do you know your BMI (body mass index)? (We ask this question as body mass can impact on our sleep. Please only answer if you are happy to do so):`))
+```
+
+```{r}
+write.csv(data, "dt_out/dt_cleaned_v3.csv")
+```
+
+### Remove participants below 49 years old 
+
+```{r}
+data = subset(data, age_numeric > 40)
+write.csv(data, "dt_out/dt_cleaned_v3_over40.csv")
+```
+
+## Analysis
+
+```{r}
+pca_data <- subset(data, select=c(age_numeric, sleep_time_to_fall_asleep_numeric, income_numeric, awake_minutes_numeric,
+                   early_waking_numeric, functional_impairment_numeric, daytime_sleepiness_numeric, exercise_frequency_numeric))
+
+# Check for NA values and handle them
+pca_data <- na.omit(pca_data)
+
+# Standardize the data
+pca_data_scaled <- scale(pca_data)
+
+# Perform PCA
+pca_result <- prcomp(pca_data_scaled, center = TRUE, scale. = TRUE)
+
+# Plot PCA
+plot_ggbiplot <- ggbiplot(pca_result, obs.scale = 1, var.scale = 1, ellipse = TRUE, circle = TRUE) # replace 'group_variable' with actual group variable if needed
+print(plot_ggbiplot)
+```
+
+```{r}
+loadings <- pca_result$rotation[, 1]  # Only for the first principal component
+
+# Convert loadings to a data frame for easier handling
+loadings_df <- as.data.frame(loadings)
+loadings_df$variable <- rownames(loadings_df)
+colnames(loadings_df) <- c("loading", "variable")
+
+# Ordering loadings by absolute value for better visualization
+loadings_df <- loadings_df %>%
+  arrange(desc(abs(loading)))
+```
+
+```{r}
+ggplot(loadings_df, aes(x = reorder(variable, loading), y = loading, fill = loading > 0)) +
+  geom_col() +
+  coord_flip() +  # Flips the axes for better readability of variable names
+  labs(title = "Contributions of Variables to PC1",
+       x = "Variable",
+       y = "Loading") +
+  scale_fill_manual(name = "Direction", 
+                    labels = c("Negative", "Positive"), 
+                    values = c("red", "blue")) +  # Colors to distinguish positive and negative contributions
+  theme_minimal()
+```
+
+
+```{r}
+pca_data <- subset(data, select=c(sleep_time_to_fall_asleep_numeric, awake_minutes_numeric,
+                   early_waking_numeric, functional_impairment_numeric, daytime_sleepiness_numeric, exercise_frequency_numeric))
+
+pca_data$take_testosterone <- data$take_testosterone
+pca_data <- na.omit(pca_data)
+
+# Standardize the data for PCA
+pca_data_scaled <- scale(subset(pca_data, select=c(-take_testosterone)))
+pca_data <- na.omit(pca_data)
+
+# Perform PCA
+pca_result <- prcomp(pca_data_scaled, center = TRUE, scale. = TRUE)
+
+# Plot PCA with ggbiplot and color by HRT and testosterone status
+plot_ggbiplot <- ggbiplot(pca_result, obs.scale = 1, var.scale = 1,
+                          groups = pca_data$take_testosterone, ellipse = TRUE, circle = TRUE)
+print(plot_ggbiplot)
+
+```
+
+```{r}
+pca_data <- subset(data,select =c(sleep_time_to_fall_asleep_numeric, awake_minutes_numeric,
+                   early_waking_numeric, functional_impairment_numeric, daytime_sleepiness_numeric, exercise_frequency_numeric))
+
+pca_data$take_HRT <- data$take_HRT
+pca_data <- na.omit(pca_data)
+
+# Standardize the data for PCA
+pca_data_scaled <- scale(subset(pca_data, select =c(-take_HRT)))
+pca_data <- na.omit(pca_data)
+
+# Perform PCA
+pca_result <- prcomp(pca_data_scaled, center = TRUE, scale. = TRUE)
+
+# Plot PCA with ggbiplot and color by HRT and testosterone status
+plot_ggbiplot <- ggbiplot(pca_result, obs.scale = 1, var.scale = 1,
+                          groups = pca_data$take_HRT, ellipse = TRUE, circle = TRUE)
+print(plot_ggbiplot)
+```
+```{r}
+pca_data <- subset(data, select =c(sleep_time_to_fall_asleep_numeric, awake_minutes_numeric,
+                   early_waking_numeric, functional_impairment_numeric, daytime_sleepiness_numeric, exercise_frequency_numeric))
+
+pca_data$Physical_symptoms__e_g__pain__hot_flushes__sweats__racing_heart__needing_to_use_the_bathroom <- data$Physical_symptoms__e_g__pain__hot_flushes__sweats__racing_heart__needing_to_use_the_bathroom
+pca_data <- na.omit(pca_data)
+
+# Standardize the data for PCA
+pca_data_scaled <- scale(subset(pca_data, select=c(-Physical_symptoms__e_g__pain__hot_flushes__sweats__racing_heart__needing_to_use_the_bathroom)))
+pca_data <- na.omit(pca_data)
+
+# Perform PCA
+pca_result <- prcomp(pca_data_scaled, center = TRUE, scale. = TRUE)
+
+# Plot PCA with ggbiplot and color by HRT and testosterone status
+plot_ggbiplot <- ggbiplot(pca_result, obs.scale = 1, var.scale = 1,
+                          groups = pca_data$Physical_symptoms__e_g__pain__hot_flushes__sweats__racing_heart__needing_to_use_the_bathroom, ellipse = TRUE, circle = TRUE)
+print(plot_ggbiplot)
+```
+
+```{r}
+
+umap_result <- umap::umap(as.matrix(pca_data_scaled))
+umap_df <- as.data.frame(umap_result$layout)
+colnames(umap_df) <- c("UMAP1", "UMAP2")
+
+# Optionally, if you have a categorical variable to color by (e.g., clusters or groups):
+umap_df$group <- data$take_testosterone  # make sure this aligns by row with your umap data
+
+# Plot
+ggplot(umap_df, aes(x = UMAP1, y = UMAP2)) +
+  geom_point(aes(color = factor(umap_df$group)), alpha = 0.5) +  # Remove color mapping if not needed
+  labs(title = "UMAP Projection", x = "UMAP 1", y = "UMAP 2") +
+  theme_minimal() +
+  scale_color_viridis_d()  # Only if you have groups to color
+```
+
+```{r}
+data_pca = data
+data_pca$pc1 = pca_result$x[,1]
+
+model <- lm(pc1 ~ age_numeric + income_numeric + exercise_frequency_numeric + bmi + take_HRT, data = data_pca)
+summary(model)
+  
+```
+```{r}
+model <- lm(pc1 ~ age_numeric + income_numeric+ + exercise_frequency_numeric+ bmi+ take_testosterone, data = data_pca)
+summary(model)
+```
+```{r}
+model <- lm(pc1 ~ age_numeric + income_numeric + exercise_frequency_numeric+ bmi + Physical_symptoms__e_g__pain__hot_flushes__sweats__racing_heart__needing_to_use_the_bathroom, data = data_pca)
+summary(model)
+```
+
+## Models
+
+```{r}
+# Define the list of response variables
+response_vars <- c("sleep_quality", "time_to_fall_asleep_numeric", "awake_minutes_numeric", 
+                   "early_waking_numeric", "functional_impairment_numeric", "daytime_sleepiness_numeric")
+
+# Initialize an empty data frame to store coefficients, confidence intervals, and p-values
+coefficients_df <- data.frame(variable = character(), coefficient = numeric(), 
+                              ci_lower = numeric(), ci_upper = numeric(), p_value = numeric())
+
+# Loop through each response variable, fit the model, and extract the coefficient, CI, and p-value for 'take_HRT'
+for (var in response_vars) {
+  data[,var] = as.numeric(as.character(data[,var]))
+  data[[var]] <- (data[[var]] - min(data[[var]], na.rm = TRUE)) / (max(data[[var]], na.rm = TRUE) - min(data[[var]], na.rm = TRUE))
+  formula <- as.formula(paste(var, "~ age_numeric + income_numeric + exercise_frequency_numeric + take_HRT"))
+  model <- lm(formula, data = data)
+  
+  # Extracting the coefficient, confidence interval, and p-value for 'take_HRT'
+  summary_model <- summary(model)
+  take_HRT_coef <- coef(summary_model)["take_HRTTRUE", ]
+  ci <- confint.default(model, "take_HRTTRUE", level = 0.95)
+
+  # Append the results
+  coefficients_df <- rbind(coefficients_df, data.frame(variable = var, 
+                                                       coefficient = take_HRT_coef["Estimate"],
+                                                       ci_lower = ci[1],
+                                                       ci_upper = ci[2],
+                                                       p_value = take_HRT_coef["Pr(>|t|)"]))
+}
+# Define significance levels for coloring
+coefficients_df$significance <- ifelse(coefficients_df$p_value < 0.001, "p < 0.001",
+                               ifelse(coefficients_df$p_value < 0.01, "p < 0.01",
+                               ifelse(coefficients_df$p_value < 0.05, "p < 0.05", "p >= 0.05")))
+
+# Plotting the coefficients as a forest plot
+ggplot(coefficients_df, aes(x = reorder(variable,-coefficient), y = coefficient, color = significance)) +
+  geom_point(size = 3) +  # Display the coefficient estimates as points
+  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.2) +  # Display error bars for CIs
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+  scale_color_manual(values = c("p < 0.001" = "red", "p < 0.01" = "orange", "p < 0.05" = "blue", "p >= 0.05" = "grey")) +
+  labs(title = "Effect of HRT on Various Sleep and Activity Measures",
+       subtitle = "Colored by Significance Levels of P-Value",
+       x = "Coefficient of 'take_HRT'",
+       y = "Response Variable") +
+  coord_flip()+
+  theme_minimal()
+```
+
+```{r}
+# Define the list of response variables
+response_vars <- c("sleep_quality", "time_to_fall_asleep_numeric", "awake_minutes_numeric", 
+                   "early_waking_numeric", "functional_impairment_numeric", "daytime_sleepiness_numeric")
+
+# Initialize an empty data frame to store coefficients, confidence intervals, and p-values
+coefficients_df <- data.frame(variable = character(), coefficient = numeric(), 
+                              ci_lower = numeric(), ci_upper = numeric(), p_value = numeric())
+
+# Loop through each response variable, fit the model, and extract the coefficient, CI, and p-value for 'take_testosterone'
+for (var in response_vars) {
+  data[[var]] <- (data[[var]] - min(data[[var]], na.rm = TRUE)) / (max(data[[var]], na.rm = TRUE) - min(data[[var]], na.rm = TRUE))
+  formula <- as.formula(paste(var, "~ age_numeric + income_numeric + white_british + exercise_frequency_numeric + take_testosterone"))
+  model <- lm(formula, data = data)
+  
+  # Extracting the coefficient, confidence interval, and p-value for 'take_testosterone'
+  summary_model <- summary(model)
+  coef <- coef(summary_model)["take_testosteroneTRUE", ]
+  ci <- confint.default(model, "take_testosteroneTRUE", level = 0.95)
+
+  # Append the results
+  coefficients_df <- rbind(coefficients_df, data.frame(variable = var, 
+                                                       coefficient = coef["Estimate"],
+                                                       ci_lower = ci[1],
+                                                       ci_upper = ci[2],
+                                                       p_value = coef["Pr(>|t|)"]))
+}
+# Define significance levels for coloring
+coefficients_df$significance <- ifelse(coefficients_df$p_value < 0.001, "p < 0.001",
+                               ifelse(coefficients_df$p_value < 0.01, "p < 0.01",
+                               ifelse(coefficients_df$p_value < 0.05, "p < 0.05", "p >= 0.05")))
+
+# Plotting the coefficients as a forest plot
+ggplot(coefficients_df, aes(x = reorder(variable,-coefficient), y = coefficient, color = significance)) +
+  geom_point(size = 3) +  # Display the coefficient estimates as points
+  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.2) +  # Display error bars for CIs
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+  scale_color_manual(values = c("p < 0.001" = "red", "p < 0.01" = "orange", "p < 0.05" = "blue", "p >= 0.05" = "grey")) +
+  labs(title = "Effect of testosterone on Various Sleep and Activity Measures",
+       subtitle = "Colored by Significance Levels of P-Value",
+       x = "Coefficient of 'take_testosterone'",
+       y = "Response Variable") +
+  coord_flip()+
+  theme_minimal()
+```
+
+```{r}
+# Define the list of response variables
+response_vars <- c("sleep_quality", "time_to_fall_asleep_numeric", "awake_minutes_numeric", 
+                   "early_waking_numeric", "functional_impairment_numeric", "daytime_sleepiness_numeric")
+
+# Initialize an empty data frame to store coefficients, confidence intervals, and p-values
+coefficients_df <- data.frame(variable = character(), coefficient = numeric(), 
+                              ci_lower = numeric(), ci_upper = numeric(), p_value = numeric())
+
+# Loop through each response variable, fit the model, and extract the coefficient, CI, and p-value for 'take_testosterone'
+for (var in response_vars) {
+  data[[var]] <- (data[[var]] - min(data[[var]], na.rm = TRUE)) / (max(data[[var]], na.rm = TRUE) - min(data[[var]], na.rm = TRUE))
+  formula <- as.formula(paste(var, "~ age_numeric + income_numeric + exercise_frequency_numeric + take_testosterone"))
+  model <- lm(formula, data = data)
+  
+  # Extracting the coefficient, confidence interval, and p-value for 'take_testosterone'
+  summary_model <- summary(model)
+  coef <- coef(summary_model)["take_testosteroneTRUE", ]
+  ci <- confint.default(model, "take_testosteroneTRUE", level = 0.95)
+
+  # Append the results
+  coefficients_df <- rbind(coefficients_df, data.frame(variable = var, 
+                                                       coefficient = coef["Estimate"],
+                                                       ci_lower = ci[1],
+                                                       ci_upper = ci[2],
+                                                       p_value = coef["Pr(>|t|)"]))
+}
+# Define significance levels for coloring
+coefficients_df$significance <- ifelse(coefficients_df$p_value < 0.001, "p < 0.001",
+                               ifelse(coefficients_df$p_value < 0.01, "p < 0.01",
+                               ifelse(coefficients_df$p_value < 0.05, "p < 0.05", "p >= 0.05")))
+
+# Plotting the coefficients as a forest plot
+ggplot(coefficients_df, aes(x = reorder(variable,-coefficient), y = coefficient, color = significance)) +
+  geom_point(size = 3) +  # Display the coefficient estimates as points
+  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.2) +  # Display error bars for CIs
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+  scale_color_manual(values = c("p < 0.001" = "red", "p < 0.01" = "orange", "p < 0.05" = "blue", "p >= 0.05" = "grey")) +
+  labs(title = "Effect of testosterone on Various Sleep and Activity Measures",
+       subtitle = "Colored by Significance Levels of P-Value",
+       x = "Coefficient of 'take_HRT'",
+       y = "Response Variable") +
+  coord_flip()+
+  theme_minimal()
+```
+
+
+```{r}
+# Define the list of response variables
+response_vars <- c("sleep_quality", "time_to_fall_asleep_numeric", "awake_minutes_numeric", 
+                   "early_waking_numeric", "functional_impairment_numeric", "daytime_sleepiness_numeric")
+
+# Initialize an empty data frame to store coefficients, confidence intervals, and p-values
+coefficients_df <- data.frame(variable = character(), coefficient = numeric(), 
+                              ci_lower = numeric(), ci_upper = numeric(), p_value = numeric())
+
+# Loop through each response variable, fit the model, and extract the coefficient, CI, and p-value for 'take_testosterone'
+for (var in response_vars) {
+  formula <- as.formula(paste(var, "~ age_numeric  + exercise_frequency_numeric + take_testosterone"))
+  data[,var] = as.factor(data[,var])
+ model <- polr(formula, data = data, Hess=TRUE)
+  # Extracting the coefficient, confidence interval, and p-value for 'take_testosterone'
+  coef_info <- coef(summary(model))
+  p <- pnorm(abs(coef_info[, "t value"]), lower.tail = FALSE) * 2
+
+  (coef_info <- cbind(coef_info, "p value" = p))
+  ci <- confint(model, "take_testosteroneTRUE", level = 0.95)
+
+  # Append the results
+  coefficients_df <- rbind(coefficients_df, data.frame(variable = var, 
+                                                       coefficient = coef_info["take_testosteroneTRUE", "Value"],
+                                                       ci_lower = ci[1],
+                                                       ci_upper = ci[2],
+                                                       p_value = coef_info["take_testosteroneTRUE", "p value"]))
+}
+
+# Define significance levels for coloring
+coefficients_df$significance <- ifelse(coefficients_df$p_value < 0.001, "p < 0.001",
+                               ifelse(coefficients_df$p_value < 0.01, "p < 0.01",
+                               ifelse(coefficients_df$p_value < 0.05, "p < 0.05", "p >= 0.05")))
+# Plotting the coefficients as a forest plot
+ggplot(coefficients_df, aes(x = reorder(variable, -coefficient), y = coefficient, color = significance)) +
+  geom_point(size = 3) +  # Display the coefficient estimates as points
+  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.2) +  # Display error bars for CIs
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+  scale_color_manual(values = c("p < 0.001" = "red", "p < 0.01" = "orange", "p < 0.05" = "blue", "p >= 0.05" = "grey")) +
+  labs(title = "Effect of Testosterone on Various Sleep and Activity Measures",
+       subtitle = "Colored by Significance Levels of P-Value",
+       x = "Coefficient of 'take_testosterone'",
+       y = "Response Variable") +
+  coord_flip() +
+  theme_minimal()
+```
+```{r}
+# Define the list of response variables
+response_vars <- c("sleep_quality", "time_to_fall_asleep_numeric", "awake_minutes_numeric", 
+                   "early_waking_numeric", "functional_impairment_numeric", "daytime_sleepiness_numeric")
+
+# Initialize an empty data frame to store coefficients, confidence intervals, and p-values
+coefficients_df <- data.frame(variable = character(), coefficient = numeric(), 
+                              ci_lower = numeric(), ci_upper = numeric(), p_value = numeric())
+
+# Loop through each response variable, fit the model, and extract the coefficient, CI, and p-value for 'take_HRT'
+for (var in response_vars) {
+  formula <- as.formula(paste(var, "~ age_numeric  + exercise_frequency_numeric + take_HRT"))
+  data[,var] = as.factor(data[,var])
+ model <- polr(formula, data = data, Hess=TRUE)
+  # Extracting the coefficient, confidence interval, and p-value for 'take_testosterone'
+  coef_info <- coef(summary(model))
+  p <- pnorm(abs(coef_info[, "t value"]), lower.tail = FALSE) * 2
+
+  (coef_info <- cbind(coef_info, "p value" = p))
+  ci <- confint(model, "take_HRTTRUE", level = 0.95)
+
+  # Append the results
+  coefficients_df <- rbind(coefficients_df, data.frame(variable = var, 
+                                                       coefficient = coef_info["take_HRTTRUE", "Value"],
+                                                       ci_lower = ci[1],
+                                                       ci_upper = ci[2],
+                                                       p_value = coef_info["take_HRTTRUE", "p value"]))
+}
+
+# Define significance levels for coloring
+coefficients_df$significance <- ifelse(coefficients_df$p_value < 0.001, "p < 0.001",
+                               ifelse(coefficients_df$p_value < 0.01, "p < 0.01",
+                               ifelse(coefficients_df$p_value < 0.05, "p < 0.05", "p >= 0.05")))
+# Plotting the coefficients as a forest plot
+ggplot(coefficients_df, aes(x = reorder(variable, -coefficient), y = coefficient, color = significance)) +
+  geom_point(size = 3) +  # Display the coefficient estimates as points
+  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.2) +  # Display error bars for CIs
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+  scale_color_manual(values = c("p < 0.001" = "red", "p < 0.01" = "orange", "p < 0.05" = "blue", "p >= 0.05" = "grey")) +
+  labs(title = "Effect of HRT on Various Sleep and Activity Measures",
+       subtitle = "Colored by Significance Levels of P-Value",
+       x = "Coefficient of 'take_HRTTRUE'",
+       y = "Response Variable") +
+  coord_flip() +
+  theme_minimal()
+```
+
+```{r}
+mod = glm(Physical_symptoms__e_g__pain__hot_flushes__sweats__racing_heart__needing_to_use_the_bathroom ~ age_numeric+income_numeric+take_testosterone, data=data, family = "binomial")
+summary(mod)
+```
+
+```{r}
+mod = glm(Physical_symptoms__e_g__pain__hot_flushes__sweats__racing_heart__needing_to_use_the_bathroom ~ age_numeric+income_numeric+take_HRT, data=data, family = "binomial")
+summary(mod)
+```

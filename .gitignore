@@ -1,0 +1,36 @@
+# ---- Raw / participant data (never commit) ----
+*.csv
+*.tsv
+*.xlsx
+*.xls
+*.pkl
+*.RData
+*.rds
+*.h5
+*.h5ad
+dt/
+dt_out/
+
+# ---- Large / derived outputs ----
+*.zip
+*.pdf
+*.ai
+
+# ---- R session / project cruft ----
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+*.Rproj
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+
+# ---- System ----
+.DS_Store
+Thumbs.db

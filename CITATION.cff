@@ -1,0 +1,41 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the associated publication."
+title: "sleepMenopause: analysis code"
+authors:
+  - family-names: Noordeen
+    given-names: Suleyman
+  - family-names: Fei
+    given-names: Lijiang
+  - family-names: Bihnam
+    given-names: Mariam
+  - family-names: Huang-Doran
+    given-names: Isabel
+  - family-names: Reisel
+    given-names: Dan
+  - family-names: Nightingale
+    given-names: Kari
+  - family-names: Newson
+    given-names: Louise
+  - family-names: Yu
+    given-names: Yizhou
+preferred-citation:
+  type: article
+  title: "Multimodal mapping associates age-related androgen decline with perimenopausal sleep-onset disruption"
+  authors:
+    - family-names: Noordeen
+      given-names: Suleyman
+    - family-names: Fei
+      given-names: Lijiang
+    - family-names: Bihnam
+      given-names: Mariam
+    - family-names: Huang-Doran
+      given-names: Isabel
+    - family-names: Reisel
+      given-names: Dan
+    - family-names: Nightingale
+      given-names: Kari
+    - family-names: Newson
+      given-names: Louise
+    - family-names: Yu
+      given-names: Yizhou
+  year: 2026
