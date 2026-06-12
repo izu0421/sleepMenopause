@@ -82,7 +82,11 @@
 └── scripts/
     ├── 01_population_age_sleep_comparison.py
     ├── 02_cohort_preprocessing_and_regression.Rmd
-    └── 03_hormone_cell_atlas_overview.R</code></pre>
+    ├── 03_hormone_cell_atlas_overview.R
+    └── mr/                                   # Mendelian randomisation (Figure 5)
+        ├── mr_testosterone_sleep.R
+        ├── f_statistics.R
+        └── female_mr_figures.R</code></pre>
   </section>
 
   <section id="scripts">
@@ -94,29 +98,53 @@
       <tbody>
         <tr>
           <td>01</td>
-          <td><code>scripts/01_population_age_sleep_comparison.py</code></td>
+          <td><a href="https://github.com/izu0421/sleepMenopause/blob/main/scripts/01_population_age_sleep_comparison.py"><code>scripts/01_population_age_sleep_comparison.py</code></a></td>
           <td>Python</td>
           <td>Age-stratified comparison of sleep outcomes in women (&lt;40 vs ≥40&nbsp;y); Mann–Whitney&nbsp;U, Welch's t-tests and ordinal models — the population baseline of age-related sleep degradation.</td>
           <td>Figure&nbsp;1</td>
         </tr>
         <tr>
           <td>02</td>
-          <td><code>scripts/02_cohort_preprocessing_and_regression.Rmd</code></td>
+          <td><a href="https://github.com/izu0421/sleepMenopause/blob/main/scripts/02_cohort_preprocessing_and_regression.Rmd"><code>scripts/02_cohort_preprocessing_and_regression.Rmd</code></a></td>
           <td>R&nbsp;(R&nbsp;Markdown)</td>
           <td>Cleans the perimenopausal sleep-survey responses, derives the analysis dataset, and models associations between hormonal use, clinical triggers and sleep outcomes via ordinal logistic regression (<code>MASS::polr</code>) and Spearman correlations.</td>
           <td>Figures&nbsp;2–4</td>
         </tr>
         <tr>
           <td>03</td>
-          <td><code>scripts/03_hormone_cell_atlas_overview.R</code></td>
+          <td><a href="https://github.com/izu0421/sleepMenopause/blob/main/scripts/03_hormone_cell_atlas_overview.R"><code>scripts/03_hormone_cell_atlas_overview.R</code></a></td>
           <td>R</td>
           <td>Summarises the single-cell Hormone Cell Atlas subset (ovary, adrenal, breast): donor counts, cell-type counts and tissue composition for the steroidogenic-enzyme and androgen-receptor analyses.</td>
           <td>Figure&nbsp;6&nbsp;/&nbsp;overview</td>
         </tr>
+        <tr>
+          <td>04</td>
+          <td><a href="https://github.com/izu0421/sleepMenopause/blob/main/scripts/mr/mr_testosterone_sleep.R"><code>scripts/mr/mr_testosterone_sleep.R</code></a></td>
+          <td>R</td>
+          <td>Two-sample Mendelian randomisation of testosterone (total &amp; bioavailable; Ruth et al. 2020) on sleep latency / insomnia, using <code>TwoSampleMR</code>, MR-PRESSO and MRlap.</td>
+          <td>Figure&nbsp;5</td>
+        </tr>
+        <tr>
+          <td>05</td>
+          <td><a href="https://github.com/izu0421/sleepMenopause/blob/main/scripts/mr/f_statistics.R"><code>scripts/mr/f_statistics.R</code></a></td>
+          <td>R</td>
+          <td>Computes per-SNP and mean F-statistics and R² for the testosterone instruments (instrument-strength table).</td>
+          <td>Figure&nbsp;5</td>
+        </tr>
+        <tr>
+          <td>06</td>
+          <td><a href="https://github.com/izu0421/sleepMenopause/blob/main/scripts/mr/female_mr_figures.R"><code>scripts/mr/female_mr_figures.R</code></a></td>
+          <td>R</td>
+          <td>Female-only MR figures: forest and scatter plots across estimators (IVW, MR-Egger, weighted median, MR-PRESSO raw/corrected) with FDR correction.</td>
+          <td>Figure&nbsp;5</td>
+        </tr>
       </tbody>
     </table>
-    <p class="muted">The Mendelian randomisation analysis (Figure&nbsp;5) used
-    external GWAS summary statistics and is not included here.</p>
+    <p class="muted">The Mendelian randomisation scripts (<code>scripts/mr/</code>)
+    rely on external GWAS summary statistics (Ruth&nbsp;et&nbsp;al.&nbsp;2020;
+    Amin&nbsp;et&nbsp;al.&nbsp;2016; UK&nbsp;Biobank), downloaded separately — see
+    each script's header. Run <code>mr_testosterone_sleep.R</code> first; it
+    writes the cached instruments and results the other two scripts consume.</p>
   </section>
 
   <section id="workflow">
@@ -125,6 +153,7 @@
     <ol>
       <li><strong>Population baseline (01)</strong> — establish age-related sleep degradation in women over 40.</li>
       <li><strong>Perimenopausal cohort (02)</strong> — deep-phenotype an independent cohort and map clinical triggers and hormonal use onto specific sleep domains.</li>
+      <li><strong>Causal inference (04–06)</strong> — test whether genetically-predicted testosterone affects sleep onset using Mendelian randomisation.</li>
       <li><strong>Mechanism (03)</strong> — characterise age-related steroidogenic decline and androgen-receptor expression in the single-cell Hormone Cell Atlas.</li>
     </ol>
   </section>
@@ -145,9 +174,13 @@
   <section id="requirements">
     <h2>Requirements</h2>
     <h3>R (≥ 4.4 recommended)</h3>
-<pre><code>install.packages(c("dplyr", "tidyr", "caret", "ggplot2", "stringr",
+<pre><code>install.packages(c("dplyr", "tidyr", "readr", "caret", "ggplot2", "stringr",
                    "ggbiplot", "MASS", "broom", "data.table", "scales",
-                   "cowplot"))</code></pre>
+                   "cowplot", "patchwork", "LDlinkR"))
+
+# Mendelian randomisation (scripts/mr/) — from GitHub:
+# remotes::install_github(c("MRCIEU/TwoSampleMR", "MRCIEU/ieugwasr",
+#                           "rondolab/MR-PRESSO", "n-mounier/MRlap"))</code></pre>
     <h3>Python (≥ 3.9)</h3>
 <pre><code>pip install pandas numpy scipy statsmodels</code></pre>
   </section>
@@ -158,6 +191,7 @@
       <li>Obtain the input data (see <a href="#data">Data availability</a>) and place them where each script expects them, updating any absolute file paths.</li>
       <li>Run <code>scripts/01_population_age_sleep_comparison.py</code>.</li>
       <li>Knit <code>scripts/02_cohort_preprocessing_and_regression.Rmd</code> (e.g. in RStudio).</li>
+      <li>Run the MR scripts in order: <code>scripts/mr/mr_testosterone_sleep.R</code>, then <code>scripts/mr/f_statistics.R</code> and <code>scripts/mr/female_mr_figures.R</code>.</li>
       <li>Run <code>scripts/03_hormone_cell_atlas_overview.R</code>.</li>
     </ol>
   </section>

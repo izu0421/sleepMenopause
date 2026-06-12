@@ -16,13 +16,18 @@ scripts only — **no raw or participant-level data are included** (see
 ```
 sleepMenopause/
 ├── README.md                  # this file (index)
+├── index.html                 # GitHub Pages site (mirrors this README)
 ├── LICENSE                    # academic / non-commercial use license
 ├── CITATION.cff               # how to cite this work
 ├── .gitignore                 # excludes data, outputs and system files
 └── scripts/
     ├── 01_population_age_sleep_comparison.py
     ├── 02_cohort_preprocessing_and_regression.Rmd
-    └── 03_hormone_cell_atlas_overview.R
+    ├── 03_hormone_cell_atlas_overview.R
+    └── mr/                                   # Mendelian randomisation (Figure 5)
+        ├── mr_testosterone_sleep.R
+        ├── f_statistics.R
+        └── female_mr_figures.R
 ```
 
 ## Scripts index
@@ -32,9 +37,15 @@ sleepMenopause/
 | 01 | `scripts/01_population_age_sleep_comparison.py` | Python | Age-stratified comparison of sleep outcomes in women (<40 vs ≥40 y); Mann–Whitney U, Welch's t-tests and ordinal models — the population baseline of age-related sleep degradation. | Figure 1 |
 | 02 | `scripts/02_cohort_preprocessing_and_regression.Rmd` | R (R Markdown) | Cleans the perimenopausal sleep-survey responses, derives the analysis dataset, and models associations between hormonal use, clinical triggers and sleep outcomes via ordinal logistic regression (`MASS::polr`) and Spearman correlations. | Figures 2–4 |
 | 03 | `scripts/03_hormone_cell_atlas_overview.R` | R | Summarises the single-cell Hormone Cell Atlas subset (ovary, adrenal, breast): donor counts, cell-type counts and tissue composition for the steroidogenic-enzyme and androgen-receptor analyses. | Figure 6 / overview |
+| 04 | `scripts/mr/mr_testosterone_sleep.R` | R | Two-sample Mendelian randomisation of testosterone (total & bioavailable; Ruth et al. 2020) on sleep latency / insomnia, using `TwoSampleMR`, MR-PRESSO and MRlap. | Figure 5 |
+| 05 | `scripts/mr/f_statistics.R` | R | Computes per-SNP and mean F-statistics and R² for the testosterone instruments (instrument-strength table). | Figure 5 |
+| 06 | `scripts/mr/female_mr_figures.R` | R | Female-only MR figures: forest and scatter plots across estimators (IVW, MR-Egger, weighted median, MR-PRESSO raw/corrected) with FDR correction. | Figure 5 |
 
-> The Mendelian randomisation analysis reported in the manuscript (Figure 5)
-> used external GWAS summary statistics and is not included here.
+> **Mendelian randomisation (`scripts/mr/`)** uses external GWAS summary
+> statistics (Ruth et al. 2020 testosterone; Amin et al. 2016 sleep latency;
+> UK Biobank insomnia), which are downloaded separately — see each script's
+> header. Run `mr_testosterone_sleep.R` first; it writes cached instruments and
+> results that `f_statistics.R` and `female_mr_figures.R` then consume.
 
 ## Analysis workflow
 
@@ -44,7 +55,9 @@ The scripts follow the manuscript narrative:
    women over 40.
 2. **Perimenopausal cohort (02)** — deep-phenotype an independent cohort and map
    clinical triggers and hormonal use onto specific sleep domains.
-3. **Mechanism (03)** — characterise age-related steroidogenic decline and
+3. **Causal inference (04–06)** — test whether genetically-predicted testosterone
+   affects sleep onset using Mendelian randomisation.
+4. **Mechanism (03)** — characterise age-related steroidogenic decline and
    androgen-receptor expression in the single-cell Hormone Cell Atlas.
 
 ## Data availability
@@ -61,9 +74,13 @@ corresponding authors.
 **R** (≥ 4.4 recommended)
 
 ```r
-install.packages(c("dplyr", "tidyr", "caret", "ggplot2", "stringr",
+install.packages(c("dplyr", "tidyr", "readr", "caret", "ggplot2", "stringr",
                    "ggbiplot", "MASS", "broom", "data.table", "scales",
-                   "cowplot"))
+                   "cowplot", "patchwork", "LDlinkR"))
+
+# Mendelian randomisation (scripts/mr/) — from GitHub:
+# remotes::install_github(c("MRCIEU/TwoSampleMR", "MRCIEU/ieugwasr",
+#                           "rondolab/MR-PRESSO", "n-mounier/MRlap"))
 ```
 
 **Python** (≥ 3.9)
@@ -78,7 +95,10 @@ pip install pandas numpy scipy statsmodels
    script expects them, updating any absolute file paths.
 2. Run `scripts/01_population_age_sleep_comparison.py`.
 3. Knit `scripts/02_cohort_preprocessing_and_regression.Rmd` (e.g. in RStudio).
-4. Run `scripts/03_hormone_cell_atlas_overview.R`.
+4. Run the Mendelian randomisation scripts in order:
+   `scripts/mr/mr_testosterone_sleep.R`, then `scripts/mr/f_statistics.R` and
+   `scripts/mr/female_mr_figures.R`.
+5. Run `scripts/03_hormone_cell_atlas_overview.R`.
 
 ## Citation
 
