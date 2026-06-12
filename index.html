@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sleepMenopause — analysis code</title>
+<style>
+  :root{
+    --navy:#143A5A; --blue:#2E6E9E; --light:#EAF3F8; --border:#D6E1EA;
+    --ink:#26323C; --muted:#5B6B79; --amber:#C77F1A; --code-bg:#0f2a40;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+       color:var(--ink);line-height:1.6;background:#fff;}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  header{background:linear-gradient(135deg,#143A5A,#1f5180);color:#fff;padding:54px 24px 40px;}
+  .wrap{max-width:880px;margin:0 auto;padding:0 24px;}
+  header .wrap{padding:0}
+  header h1{margin:0 0 8px;font-size:2.1rem;letter-spacing:-.5px}
+  header p{margin:0;color:#CFE2EE;font-size:1.05rem;max-width:680px}
+  .btns{margin-top:22px;display:flex;gap:12px;flex-wrap:wrap}
+  .btn{display:inline-block;background:#fff;color:var(--navy);font-weight:600;
+       padding:9px 16px;border-radius:8px;font-size:.92rem}
+  .btn.ghost{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.6)}
+  main{padding:8px 0 60px}
+  section{margin-top:38px}
+  h2{color:var(--navy);font-size:1.35rem;border-bottom:2px solid var(--light);
+     padding-bottom:8px;margin-bottom:14px}
+  h3{color:var(--navy);font-size:1.05rem;margin:22px 0 6px}
+  p{margin:0 0 12px}
+  .muted{color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:.93rem;margin:6px 0 4px}
+  th,td{text-align:left;padding:10px 12px;border:1px solid var(--border);vertical-align:top}
+  th{background:var(--light);color:var(--navy);font-weight:700}
+  td code{white-space:nowrap}
+  code{font-family:"SF Mono",Menlo,Consolas,monospace;background:#eef3f7;
+       padding:.12em .4em;border-radius:5px;font-size:.88em;color:#0d3a5c}
+  pre{background:var(--code-bg);color:#e6edf3;padding:16px 18px;border-radius:10px;
+      overflow:auto;font-size:.86rem;line-height:1.5}
+  pre code{background:none;color:inherit;padding:0}
+  ol li,ul li{margin:5px 0}
+  .note{background:#FBF1E0;border-left:4px solid var(--amber);padding:12px 16px;
+        border-radius:6px;color:#5b4a22;font-size:.95rem}
+  .card{background:var(--light);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+  footer{border-top:1px solid var(--border);padding:24px;text-align:center;color:var(--muted);font-size:.88rem}
+  footer .wrap{padding:0 24px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>sleepMenopause</h1>
+    <p>Analysis code for <em>“Multimodal mapping associates age-related androgen
+    decline with perimenopausal sleep-onset disruption.”</em></p>
+    <div class="btns">
+      <a class="btn" href="https://github.com/izu0421/sleepMenopause">View on GitHub</a>
+      <a class="btn ghost" href="#scripts">Scripts index</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section id="overview">
+    <h2>Overview</h2>
+    <p>The project combines population and clinical cohort analyses, causal
+    inference and single-cell transcriptomics to dissect perimenopausal sleep
+    disruption and the role of androgens in sleep onset. This repository
+    contains the analysis scripts only — <strong>no raw or participant-level
+    data are included</strong> (see <a href="#data">Data availability</a>).</p>
+  </section>
+
+  <section id="structure">
+    <h2>Repository structure</h2>
+<pre><code>sleepMenopause/
+├── README.md                  # index
+├── index.html                 # this page (GitHub Pages)
+├── LICENSE                    # academic / non-commercial use license
+├── CITATION.cff               # how to cite this work
+├── .gitignore                 # excludes data, outputs and system files
+└── scripts/
+    ├── 01_population_age_sleep_comparison.py
+    ├── 02_cohort_preprocessing_and_regression.Rmd
+    └── 03_hormone_cell_atlas_overview.R</code></pre>
+  </section>
+
+  <section id="scripts">
+    <h2>Scripts index</h2>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Script</th><th>Lang</th><th>What it does</th><th>Manuscript</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>01</td>
+          <td><code>scripts/01_population_age_sleep_comparison.py</code></td>
+          <td>Python</td>
+          <td>Age-stratified comparison of sleep outcomes in women (&lt;40 vs ≥40&nbsp;y); Mann–Whitney&nbsp;U, Welch's t-tests and ordinal models — the population baseline of age-related sleep degradation.</td>
+          <td>Figure&nbsp;1</td>
+        </tr>
+        <tr>
+          <td>02</td>
+          <td><code>scripts/02_cohort_preprocessing_and_regression.Rmd</code></td>
+          <td>R&nbsp;(R&nbsp;Markdown)</td>
+          <td>Cleans the perimenopausal sleep-survey responses, derives the analysis dataset, and models associations between hormonal use, clinical triggers and sleep outcomes via ordinal logistic regression (<code>MASS::polr</code>) and Spearman correlations.</td>
+          <td>Figures&nbsp;2–4</td>
+        </tr>
+        <tr>
+          <td>03</td>
+          <td><code>scripts/03_hormone_cell_atlas_overview.R</code></td>
+          <td>R</td>
+          <td>Summarises the single-cell Hormone Cell Atlas subset (ovary, adrenal, breast): donor counts, cell-type counts and tissue composition for the steroidogenic-enzyme and androgen-receptor analyses.</td>
+          <td>Figure&nbsp;6&nbsp;/&nbsp;overview</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="muted">The Mendelian randomisation analysis (Figure&nbsp;5) used
+    external GWAS summary statistics and is not included here.</p>
+  </section>
+
+  <section id="workflow">
+    <h2>Analysis workflow</h2>
+    <p>The scripts follow the manuscript narrative:</p>
+    <ol>
+      <li><strong>Population baseline (01)</strong> — establish age-related sleep degradation in women over 40.</li>
+      <li><strong>Perimenopausal cohort (02)</strong> — deep-phenotype an independent cohort and map clinical triggers and hormonal use onto specific sleep domains.</li>
+      <li><strong>Mechanism (03)</strong> — characterise age-related steroidogenic decline and androgen-receptor expression in the single-cell Hormone Cell Atlas.</li>
+    </ol>
+  </section>
+
+  <section id="data">
+    <h2>Data availability</h2>
+    <div class="card">
+      <p style="margin:0">Raw and participant-level data are <strong>not</strong>
+      distributed with this repository for privacy and ethical reasons. Each
+      script documents the input files it expects in its header. Survey data
+      were collected under the study's ethical approval; the single-cell
+      analyses draw on the Hormone Cell Atlas resource (Fei&nbsp;et&nbsp;al.,
+      2026). Requests for derived or summary data should be directed to the
+      corresponding authors.</p>
+    </div>
+  </section>
+
+  <section id="requirements">
+    <h2>Requirements</h2>
+    <h3>R (≥ 4.4 recommended)</h3>
+<pre><code>install.packages(c("dplyr", "tidyr", "caret", "ggplot2", "stringr",
+                   "ggbiplot", "MASS", "broom", "data.table", "scales",
+                   "cowplot"))</code></pre>
+    <h3>Python (≥ 3.9)</h3>
+<pre><code>pip install pandas numpy scipy statsmodels</code></pre>
+  </section>
+
+  <section id="reproduction">
+    <h2>Reproduction</h2>
+    <ol>
+      <li>Obtain the input data (see <a href="#data">Data availability</a>) and place them where each script expects them, updating any absolute file paths.</li>
+      <li>Run <code>scripts/01_population_age_sleep_comparison.py</code>.</li>
+      <li>Knit <code>scripts/02_cohort_preprocessing_and_regression.Rmd</code> (e.g. in RStudio).</li>
+      <li>Run <code>scripts/03_hormone_cell_atlas_overview.R</code>.</li>
+    </ol>
+  </section>
+
+  <section id="citation">
+    <h2>Citation</h2>
+    <p>If you use this code, please cite the study (see
+    <a href="https://github.com/izu0421/sleepMenopause/blob/main/CITATION.cff">CITATION.cff</a>).</p>
+  </section>
+
+  <section id="authors">
+    <h2>Authors</h2>
+    <p>Suleyman Noordeen, Lijiang Fei, Mariam Bihnam, Isabel Huang-Doran,
+    Dan Reisel, Kari Nightingale, Louise Newson and Yizhou Yu.</p>
+    <p class="muted">Correspondence: Yizhou Yu and Louise Newson.</p>
+  </section>
+
+  <section id="license">
+    <h2>License</h2>
+    <div class="note">Free for academic, research and other non-commercial use
+    with attribution. <strong>Commercial use requires a separate license</strong>
+    from the authors — see
+    <a href="https://github.com/izu0421/sleepMenopause/blob/main/LICENSE">LICENSE</a>.</div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">sleepMenopause · analysis code · ©&nbsp;2026 the authors</div>
+</footer>
+</body>
+</html>
