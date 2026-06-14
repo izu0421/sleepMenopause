@@ -79,6 +79,8 @@
 ├── LICENSE                    # academic / non-commercial use license
 ├── CITATION.cff               # how to cite this work
 ├── .gitignore                 # excludes data, outputs and system files
+├── HCA_Sub2_Table2C_hormones_v1.0.6_20260106_edited_testosterone_process.csv
+│                              # curated hormone→gene table (androgen/testosterone)
 └── scripts/
     ├── 01_population_age_sleep_comparison.py
     ├── 02_cohort_preprocessing_and_regression.Rmd
@@ -145,6 +147,22 @@
     Amin&nbsp;et&nbsp;al.&nbsp;2016; UK&nbsp;Biobank), downloaded separately — see
     each script's header. Run <code>mr_testosterone_sleep.R</code> first; it
     writes the cached instruments and results the other two scripts consume.</p>
+  </section>
+
+  <section id="data-table">
+    <h2>Included data table</h2>
+    <table>
+      <thead>
+        <tr><th>File</th><th>What it is</th><th>Manuscript</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a href="https://github.com/izu0421/sleepMenopause/blob/main/HCA_Sub2_Table2C_hormones_v1.0.6_20260106_edited_testosterone_process.csv"><code>HCA_Sub2_Table2C_hormones_v1.0.6_20260106_edited_testosterone_process.csv</code></a></td>
+          <td>Curated hormone→gene definition table: for each hormone (including androgens and testosterone via several biosynthetic routes), the biosynthetic enzyme genes included (<code>hpc_include1–8</code>) and excluded (<code>hpc_exclude1–2</code>) when scoring hormone-production strength per cell type, plus receptor and hormone-type annotations.</td>
+          <td>Methods (single-cell)</td>
+        </tr>
+      </tbody>
+    </table>
   </section>
 
   <section id="workflow">

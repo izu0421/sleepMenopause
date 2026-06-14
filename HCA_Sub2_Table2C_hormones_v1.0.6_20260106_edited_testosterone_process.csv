@@ -1,0 +1,26 @@
+﻿blood level,Tier,hormone_display,hormone_other,hormone_short,hpc_include1,hpc_include2,hpc_include3,hpc_include4,hpc_include5,hpc_include6,hpc_include7,hpc_include8,hpc_exclude1,hpc_exclude2,receptor_known,hormone_type_broad,hormone_type_fine
+high in blood,1,Androgens (from cholesterol),,androgens,STAR,CYP11A1,FDX1,FDXR,CYP17A1,CYB5A,,,CYP19A1,CYP21A2,yes,steroid,steroid
+high in blood,1,Testosterone (from cholesterol),,testosterone_fromCholesterol,STAR,CYP11A1,FDX1,FDXR,HSD3B1,CYP17A1,CYB5A,HSD17B3,CYP19A1,CYP21A2,yes,steroid,steroid
+high in blood,1,Testosterone (from cholesterol),,testosterone_fromCholesterol,STAR,CYP11A1,FDX1,FDXR,HSD3B1,CYP17A1,CYB5A,AKR1C3,CYP19A1,CYP21A2,yes,steroid,steroid
+high in blood,1,Testosterone (from cholesterol),,testosterone_fromCholesterol,STAR,CYP11A1,FDX1,FDXR,HSD3B2,CYP17A1,CYB5A,HSD17B3,CYP19A1,CYP21A2,yes,steroid,steroid
+high in blood,1,Testosterone (from cholesterol),,testosterone_fromCholesterol,STAR,CYP11A1,FDX1,FDXR,HSD3B2,CYP17A1,CYB5A,AKR1C3,CYP19A1,CYP21A2,yes,steroid,steroid
+high in blood,1,Testosterone (from DHEA),,Testosterone_fromDHEA,HSD17B3,HSD3B1,,,,,,,CYP19A1,,,,
+high in blood,1,Testosterone (from DHEA),,Testosterone_fromDHEA,HSD17B3,HSD3B2,,,,,,,CYP19A1,,,,
+high in blood,1,Testosterone (from DHEA),,Testosterone_fromDHEA,HSD3B1,AKR1C3,,,,,,,CYP19A1,,,,
+high in blood,1,Testosterone (from DHEA),,Testosterone_fromDHEA,HSD3B2,AKR1C3,,,,,,,CYP19A1,,,,
+exist in blood,1,Testosterone (from androstenedione),,Testosterone_fromAndrostenedione,HSD17B3,,,,,,,,CYP19A1,,,,
+exist in blood,1,Testosterone (from androstenedione),,Testosterone_fromAndrostenedione,AKR1C3,,,,,,,,CYP19A1,,,,
+low in blood,1,Testosterone (from androstenediol),,Testosterone_fromAndrostenediol,HSD3B1,,,,,,,,CYP19A1,,,,
+low in blood,1,Testosterone (from androstenediol),,Testosterone_fromAndrostenediol,HSD3B2,,,,,,,,CYP19A1,,,,
+low in blood,1,Testosterone (from pregnenolone),,Testosterone_fromPregnenolone,HSD3B1,CYP17A1,CYB5A,HSD17B3,,,,,CYP19A1,CYP21A2,yes,steroid,steroid
+low in blood,1,Testosterone (from pregnenolone),,Testosterone_fromPregnenolone,HSD3B1,CYP17A1,CYB5A,AKR1C3,,,,,CYP19A1,CYP21A2,yes,steroid,steroid
+low in blood,1,Testosterone (from pregnenolone),,Testosterone_fromPregnenolone,HSD3B2,CYP17A1,CYB5A,HSD17B3,,,,,CYP19A1,CYP21A2,yes,steroid,steroid
+low in blood,1,Testosterone (from pregnenolone),,Testosterone_fromPregnenolone,HSD3B2,CYP17A1,CYB5A,AKR1C3,,,,,CYP19A1,CYP21A2,yes,steroid,steroid
+high in blood,1,Testosterone (from progesterone),,Testosterone_fromProgesterone,CYP17A1,CYB5A,HSD17B3,,,,,,CYP19A1,CYP21A2,yes,steroid,steroid
+high in blood,1,Testosterone (from progesterone),,Testosterone_fromProgesterone,CYP17A1,CYB5A,AKR1C3,,,,,,CYP19A1,CYP21A2,yes,steroid,steroid
+high in blood,1,Testosterone (from 17a-hydroxy-progesterone),,Testosterone_from17a-hydroxy-progesterone,CYP17A1,CYB5A,HSD17B3,,,,,,CYP19A1,CYP21A2,yes,steroid,steroid
+high in blood,1,Testosterone (from 17a-hydroxy-progesterone),,Testosterone_from17a-hydroxy-progesterone,CYP17A1,CYB5A,AKR1C3,,,,,,CYP19A1,CYP21A2,yes,steroid,steroid
+low in blood,1,Testosterone (from 17a-hydroxy-pregnenolone),,Testosterone_from 17a-hydroxy-pregnenolone,HSD3B1,CYP17A1,CYB5A,HSD17B3,,,,,CYP19A1,CYP21A2,yes,steroid,steroid
+low in blood,1,Testosterone (from 17a-hydroxy-pregnenolone),,Testosterone_from 17a-hydroxy-pregnenolone,HSD3B1,CYP17A1,CYB5A,AKR1C3,,,,,CYP19A1,CYP21A2,yes,steroid,steroid
+low in blood,1,Testosterone (from 17a-hydroxy-pregnenolone),,Testosterone_from 17a-hydroxy-pregnenolone,HSD3B2,CYP17A1,CYB5A,HSD17B3,,,,,CYP19A1,CYP21A2,yes,steroid,steroid
+low in blood,1,Testosterone (from 17a-hydroxy-pregnenolone),,Testosterone_from 17a-hydroxy-pregnenolone,HSD3B2,CYP17A1,CYB5A,AKR1C3,,,,,CYP19A1,CYP21A2,yes,steroid,steroid

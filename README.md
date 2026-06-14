@@ -20,6 +20,8 @@ sleepMenopause/
 ├── LICENSE                    # academic / non-commercial use license
 ├── CITATION.cff               # how to cite this work
 ├── .gitignore                 # excludes data, outputs and system files
+├── HCA_Sub2_Table2C_hormones_v1.0.6_20260106_edited_testosterone_process.csv
+│                              # curated hormone→gene table (androgen/testosterone biosynthesis)
 └── scripts/
     ├── 01_population_age_sleep_comparison.py
     ├── 02_cohort_preprocessing_and_regression.Rmd
@@ -47,6 +49,12 @@ sleepMenopause/
 > header. Run `mr_testosterone_sleep.R` first; it writes cached instruments and
 > results that `f_statistics.R` and `female_mr_figures.R` then consume.
 
+## Included data table
+
+| File | What it is | Manuscript |
+|------|------------|------------|
+| [`HCA_Sub2_Table2C_hormones_v1.0.6_20260106_edited_testosterone_process.csv`](HCA_Sub2_Table2C_hormones_v1.0.6_20260106_edited_testosterone_process.csv) | Curated hormone→gene definition table: for each hormone (including androgens and testosterone via several biosynthetic routes), the biosynthetic enzyme genes included (`hpc_include1–8`) and excluded (`hpc_exclude1–2`) when scoring hormone-production strength per cell type, plus receptor and hormone-type annotations. | Methods (single-cell analysis) |
+
 ## Analysis workflow
 
 The scripts follow the manuscript narrative:
@@ -68,6 +76,10 @@ in its header. Survey data were collected under the study's ethical approval;
 the single-cell analyses draw on the Hormone Cell Atlas resource (Fei et al.,
 2026). Requests for derived or summary data should be directed to the
 corresponding authors.
+
+The curated hormone→gene definition table used to score androgen/testosterone
+production is included in this repository:
+[`HCA_Sub2_Table2C_hormones_v1.0.6_20260106_edited_testosterone_process.csv`](https://github.com/izu0421/sleepMenopause/blob/main/HCA_Sub2_Table2C_hormones_v1.0.6_20260106_edited_testosterone_process.csv).
 
 ## Requirements
 

@@ -11,6 +11,9 @@
 dt/
 dt_out/
 
+# Exception: curated hormone→gene definition table shared with the manuscript
+!HCA_Sub2_Table2C_hormones_v1.0.6_20260106_edited_testosterone_process.csv
+
 # ---- Large / derived outputs ----
 *.zip
 *.pdf
