@@ -43,6 +43,8 @@
   .note{background:#FBF1E0;border-left:4px solid var(--amber);padding:12px 16px;
         border-radius:6px;color:#5b4a22;font-size:.95rem}
   .card{background:var(--light);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+  .dl{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin:14px 0}
+  .dl .btn{background:var(--blue);color:#fff}
   footer{border-top:1px solid var(--border);padding:24px;text-align:center;color:var(--muted);font-size:.88rem}
   footer .wrap{padding:0 24px}
 </style>
@@ -56,6 +58,7 @@
     <div class="btns">
       <a class="btn" href="https://github.com/izu0421/sleepMenopause">View on GitHub</a>
       <a class="btn ghost" href="#scripts">Scripts index</a>
+      <a class="btn ghost" href="#hormone-gene-table">Hormone–gene table</a>
     </div>
   </div>
 </header>
@@ -149,16 +152,26 @@
     writes the cached instruments and results the other two scripts consume.</p>
   </section>
 
-  <section id="data-table">
-    <h2>Included data table</h2>
+  <section id="hormone-gene-table">
+    <h2>Hormone–gene definition table</h2>
+    <p>Curated table mapping each hormone — including androgens and testosterone
+    via several biosynthetic routes — to the enzyme genes included
+    (<code>hpc_include1–8</code>) and excluded (<code>hpc_exclude1–2</code>) when
+    scoring hormone-production strength per cell type, with receptor and
+    hormone-type annotations. This is the table referenced in the Methods
+    (single-cell analysis).</p>
+    <p class="dl">
+      <a class="btn" href="HCA_Sub2_Table2C_hormones_v1.0.6_20260106_edited_testosterone_process.csv" download>⬇ Download the table (CSV)</a>
+      <a href="https://github.com/izu0421/sleepMenopause/blob/main/HCA_Sub2_Table2C_hormones_v1.0.6_20260106_edited_testosterone_process.csv">View on GitHub</a>
+    </p>
     <table>
       <thead>
         <tr><th>File</th><th>What it is</th><th>Manuscript</th></tr>
       </thead>
       <tbody>
         <tr>
-          <td><a href="https://github.com/izu0421/sleepMenopause/blob/main/HCA_Sub2_Table2C_hormones_v1.0.6_20260106_edited_testosterone_process.csv"><code>HCA_Sub2_Table2C_hormones_v1.0.6_20260106_edited_testosterone_process.csv</code></a></td>
-          <td>Curated hormone→gene definition table: for each hormone (including androgens and testosterone via several biosynthetic routes), the biosynthetic enzyme genes included (<code>hpc_include1–8</code>) and excluded (<code>hpc_exclude1–2</code>) when scoring hormone-production strength per cell type, plus receptor and hormone-type annotations.</td>
+          <td><a href="HCA_Sub2_Table2C_hormones_v1.0.6_20260106_edited_testosterone_process.csv"><code>HCA_Sub2_Table2C_hormones_v1.0.6_20260106_edited_testosterone_process.csv</code></a></td>
+          <td>Hormone→gene definition table used to score androgen/testosterone production per cell type (included/excluded biosynthetic enzymes, receptor and hormone-type annotations).</td>
           <td>Methods (single-cell)</td>
         </tr>
       </tbody>
